@@ -4,8 +4,8 @@ const express = require('express')
 const router = express.Router()
 const auth = require('basic-auth')
 const bcrypt = require('bcrypt')
-const Course = require('../schema/schemas').Course
-const User = require('../schema/schemas').User
+const Course = require('../models/schemas').Course
+const User = require('../models/schemas').User
 
 router.param('cID', function (req, res, next, id) {
   Course.findById(id, function (err, doc) {
@@ -22,6 +22,9 @@ router.param('cID', function (req, res, next, id) {
   })
 })
 
+// a user authenticator for when someone is adding/modifying/deleting a course
+// looks for email that's provided by the user, then compares the password given to the one
+// stored for that email.  errors created for wrong password or wrong user.
 router.use((req, res, next) => {
   let currentUser = auth(req)
   if (currentUser) {
@@ -39,7 +42,7 @@ router.use((req, res, next) => {
             }
           })
         } else  {
-          const error = new Error('Invalid login')
+          const error = new Error('Invalid login email')
           error.status = 401
           next(error)
         }
@@ -51,6 +54,10 @@ router.use((req, res, next) => {
   }
 
   // POST /api/courses 201 - Creates a course, sets the Location header to the URI for the course, and returns no content
+  // ...req.body so I can add the user to the info without it being an array inside the object array
+  // validate that all the required infomation is passed in by the user
+  // then save the course and return to '/' with a 201 status.
+  // validation error if not complete info, and login error for creating courses.
   router.post('/', (req, res, next) => {
     if (req.user) {
       const newCourse = new Course({ ...req.body, user: req.user._id })
@@ -73,7 +80,7 @@ router.use((req, res, next) => {
     }
   })
 
-  // GET /api/courses/:id 200 - Returns a the course (including the user that owns the course) for the provided course ID
+  // GET /api/courses/:id 200 - Returns the course (including the user that owns the course) for the provided course ID
   router.get('/:cID', function (req, res, next) {
     Course.findById(req.params.cID)
       .populate('user', 'firstName lastName')
@@ -87,10 +94,11 @@ router.use((req, res, next) => {
   })
 
   // GET /api/courses 200 - Returns a list of courses (including the user that owns each course)
+  // made it show a title, description and the creator.
   router.get('/', function (req, res, next) {
     Course.find({})
       .populate('user', 'firstName lastName')
-      .select({ 'title': 1, 'user': 1 })
+      .select({ 'title': 1, 'description': 1 })
       .exec(function (err, course) {
         if (err) {
           return next(err)

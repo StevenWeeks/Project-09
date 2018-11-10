@@ -4,7 +4,7 @@ const express = require('express')
 const router = express.Router()
 const auth = require('basic-auth')
 const bcrypt = require('bcrypt')
-const User = require('../schema/schemas').User
+const User = require('../models/schemas').User
 
 // a function to validate emails, regex gotten from project resources.
 function emailVali (email) {
@@ -20,7 +20,6 @@ function emailVali (email) {
 router.post('/', function (req, res, next) {
   if (emailVali(req.body.emailAddress)) {
     User.find({ emailAddress: req.body.emailAddress }, function (err, users) {
-      if (err) { console.log('wooops') }
       if (users.length !== 0) {
         const error = new Error('Account email already in use.')
         error.status = 400
@@ -29,7 +28,6 @@ router.post('/', function (req, res, next) {
         let userInfo = new User(req.body)
         userInfo.validate(function (err, req, res) {
           if (err && err.name === 'ValidationError') {
-            console.log('ewwww')
             err.status = 400
             return next(err)
           }
@@ -56,7 +54,7 @@ router.post('/', function (req, res, next) {
 // the stored hashed password.
 router.use((req, res, next) => {
   let currentUser = auth(req)
-  console.log(auth(req), '1')
+
   if (currentUser) {
     User.findOne({ emailAddress: currentUser.name })
       .exec(function (err, user) {
