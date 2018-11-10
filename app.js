@@ -1,11 +1,13 @@
-'use strict';
+'use strict'
 
 // load modules
-const express = require('express');
-const morgan = require('morgan');
+const express = require('express')
+const morgan = require('morgan')
 const mongoose = require('mongoose')
 const jsonParser = require('body-parser').json
-var routes = require('./routes')
+const routes = require('./Routes/routes')
+const userRoutes = require('./Routes/Users');
+const courseRoutes = require('./Routes/Courses');
 
 // variable to enable global error logging
 const enableGlobalErrorLogging = process.env.ENABLE_GLOBAL_ERROR_LOGGING === 'true';
@@ -17,7 +19,7 @@ const app = express();
 app.use(morgan('dev'));
 //other
 mongoose.connect('mongodb://localhost:27017/fsjstd-restapi', { useNewUrlParser: true })
-
+mongoose.set("debug", true)
 const db = mongoose.connection
 
 db.on('error', function (err) {
@@ -29,15 +31,13 @@ db.once('open', function () {
 });
 
 app.use(jsonParser())
-app.use('/api', routes)
-// TODO setup your api routes here
 
-// setup a friendly greeting for the root route
-app.get('/', (req, res) => {
-  res.json({
-    message: 'Welcome to the REST API project!',
-  });
-});
+
+// TODO setup your api routes here
+app.get( '/', (req, res) => res.redirect('/api') );
+app.use("/api", routes);
+app.use("/api/users", userRoutes);
+app.use("/api/courses", courseRoutes);
 
 // send 404 if no other route matched
 app.use((req, res) => {

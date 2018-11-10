@@ -1,66 +1,61 @@
 'use strict'
 
 const mongoose = require('mongoose')
-const bCrypt = require('bcrypt')
-const SaltRounds = 11
-
 const Schema = mongoose.Schema
-
+const saltRounds = 10
+const bcrypt = require('bcrypt')
+// Users Schema
 const UserSchem = new Schema({
   firstName: {
     type: String,
-    required: [true, 'is required'],
-    minlength: [1, 'is required']
+    required: [true, 'First name required']
   },
   lastName: {
     type: String,
-    required: [true, 'is required'],
-    minlength: [1, 'is required']
+    required: [true, 'Last name required']
   },
   emailAddress: {
     type: String,
-    required: [true, 'is required'],
-    minlength: [1, 'is required']
+    required: [true, 'Email address required']
   },
   password: {
     type: String,
-    required: [true, 'required'],
-    minlength: [6, 'is required']
+    required: [true, 'Password required']
   }
 })
 
+// Courses Schema
 const CoursesSchem = new Schema({
-  user: {
+  user: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
-  },
+  }],
   title: {
     type: String,
-    required: [true, 'is required'],
-    minlength: [1, 'is required']
+    required: [true, 'Title is required']
   },
   description: {
     type: String,
-    required: [true, 'is required'],
-    minlength: [1, 'is required']
+    required: [true, 'Description is required']
   },
   estimatedTime: String,
   materialsNeeded: String
 })
-
+// putting them hooks to good use to hash passwords of users
 UserSchem.pre('save', function (next) {
-  var user = this;
-  bCrypt.genSalt(SaltRounds, function (err, salt) {
-    if (err) return next(err);
-    bCrypt.hash(user.password, salt, function (err, hash) {
-      if (err) return next(err);
-      user.password = hash;
-      next();
-    });
-  });
-});
-const User = mongoose.model('Users', UserSchem);
-const Course = mongoose.model('courses', CoursesSchem);
+  var user = this
+  bcrypt.genSalt(saltRounds, function (err, salt) {
+    if (err) return next(err)
+    bcrypt.hash(user.password, salt, function (err, hash) {
+      if (err) return next(err)
+      user.password = hash
+      next()
+    })
+  })
+})
+
+const User = mongoose.model('User', UserSchem)
+const Course = mongoose.model('Courses', CoursesSchem)
 
 module.exports.User = User
 module.exports.Course = Course
